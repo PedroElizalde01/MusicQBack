@@ -13,7 +13,7 @@ generator client {
 }
 
 model User {
-  id           String @id @default(cuid())
+  id           String @id @default(cuid()) //check nanoId - Pedro
   accessToken  String?
   refreshToken String?
   expireTime   Int @default(3600)
