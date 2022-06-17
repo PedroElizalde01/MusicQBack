@@ -18,13 +18,14 @@ CREATE TABLE "Queue" (
 
 -- CreateTable
 CREATE TABLE "Song" (
+    "id" TEXT NOT NULL,
     "uri" TEXT NOT NULL,
     "queueId" TEXT NOT NULL,
     "position" SERIAL NOT NULL,
     "likes" INTEGER NOT NULL,
     "dislikes" INTEGER NOT NULL,
 
-    CONSTRAINT "Song_pkey" PRIMARY KEY ("uri")
+    CONSTRAINT "Song_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

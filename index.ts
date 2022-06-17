@@ -67,25 +67,24 @@ app.get("/:queueId/songs", async (req: Request, res: Response) => {
     res.json(songs);
 });
 
-//get songs by uri
-app.get("/songs/:uri", async (req: Request, res: Response) => {
+//get songs by id
+app.get("/songs/:id", async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
-    const uri = req.params.uri;
+    const id = req.params.id;
     const song = await prisma.song.findMany({
         where:{
-            uri: uri,
+            id:id
         }
     });
     res.json(song);
 });
 
 //like song
-app.put("/:queueId/like", async (req: Request, res: Response) => {
-    const {uri, queueId} = req.body;
-    const likedSong = await prisma.song.updateMany({
+app.put("/:songId/like", async (req: Request, res: Response) => {
+    const id = req.params.songId;
+    const likedSong = await prisma.song.update({
         where:{
-            uri: uri,
-            queueId: queueId,
+            id:id
         },
         data:{ 
             likes: +1 //not working - Pedro
@@ -95,12 +94,11 @@ app.put("/:queueId/like", async (req: Request, res: Response) => {
 });
 
 //dislike song
-app.put("/:queueId/dislike", async (req: Request, res: Response) => {
-    const {uri, queueId} = req.body;
+app.put("/:songId/dislike", async (req: Request, res: Response) => {
+    const id = req.params.songId;
     const dislikedSong = await prisma.song.updateMany({
         where:{
-            uri: uri,
-            queueId: queueId,
+            id:id
         },
         data:{ 
             dislikes: +1 //not working - Pedro
@@ -110,13 +108,11 @@ app.put("/:queueId/dislike", async (req: Request, res: Response) => {
 });
 
 //delete song
-app.delete("/:queueId/deleteSong", async(req: Request, res: Response) => {
-    const queueId = req.params.queueId;
-    const uri = req.body.uri;
-    const deletedUser = await prisma.song.deleteMany({
+app.delete("/deleteSong/:id", async(req: Request, res: Response) => {
+    const id = req.params.id;
+    const deletedUser = await prisma.song.delete({
         where:{
-            uri: uri,
-            queueId:queueId,
+            id:id
         }}
     );
     res.json(deletedUser);

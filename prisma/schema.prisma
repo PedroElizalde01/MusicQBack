@@ -28,8 +28,9 @@ model Queue {
 }
 
 model Song {
-  uri      String @id
-  queue Queue @relation(fields: [queueId],references: [id])
+  id       String @id @default(cuid())
+  uri      String
+  queue Queue @relation(fields: [queueId], references: [id])
   queueId String
   position Int    @default(autoincrement())
   likes     Int
