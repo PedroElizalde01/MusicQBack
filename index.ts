@@ -152,12 +152,12 @@ app.post("/login", async (req: Request, res: Response) => {
                 //fix expireIn - Pedro
             },
         });
-        await prisma.queue.create({
+        const queue = await prisma.queue.create({
             data:{ 
               userId: user.id,  
             },
         });
-        res.json(user)
+        res.json([user,queue])
       })
       .catch(() => {
         res.sendStatus(400)
