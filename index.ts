@@ -3,11 +3,12 @@ import {PrismaClient} from '@prisma/client'
 
 
 const express = require("express")
+const app = express()
+
 const cors = require("cors")
 const bodyParser = require("body-parser")
 const SpotifyWebApi = require("spotify-web-api-node")
 
-const app = express()
 app.use(cors())
 app.use(bodyParser.json())
 
@@ -82,12 +83,13 @@ app.get("/songs/:id", async (req: Request, res: Response) => {
 //like song
 app.put("/:songId/like", async (req: Request, res: Response) => {
     const id = req.params.songId;
+    const {oldLikes} = req.body;
     const likedSong = await prisma.song.update({
         where:{
             id:id
         },
         data:{ 
-            likes: +1 //not working - Pedro
+            likes: oldLikes+1
         }
     })
     res.json(likedSong);
@@ -96,12 +98,13 @@ app.put("/:songId/like", async (req: Request, res: Response) => {
 //dislike song
 app.put("/:songId/dislike", async (req: Request, res: Response) => {
     const id = req.params.songId;
-    const dislikedSong = await prisma.song.updateMany({
+    const {oldDislikes} = req.body;
+    const dislikedSong = await prisma.song.update({
         where:{
             id:id
         },
         data:{ 
-            dislikes: +1 //not working - Pedro
+            dislikes: oldDislikes+1
         }
     })
     res.json(dislikedSong);
@@ -110,21 +113,25 @@ app.put("/:songId/dislike", async (req: Request, res: Response) => {
 //delete song
 app.delete("/deleteSong/:id", async(req: Request, res: Response) => {
     const id = req.params.id;
-    const deletedUser = await prisma.song.delete({
+    const deletedSong = await prisma.song.delete({
         where:{
             id:id
         }}
     );
-    res.json(deletedUser);
+    res.json(deletedSong);
 });
 
 //add song
 app.post("/addSong", async (req: Request, res: Response) => {
-    const {uri, queueId, likes, dislikes} = req.body;
+    const {uri, title, artist, albumUrl, queueId, position, likes, dislikes} = req.body;
     const song = await prisma.song.create({
         data: {
             uri: uri,
+            title: title,
+            artist: artist,
+            albumUrl: albumUrl,
             queueId: queueId,
+            position: position,
             likes: likes,
             dislikes: dislikes,
         },
@@ -132,9 +139,23 @@ app.post("/addSong", async (req: Request, res: Response) => {
     res.json(song)
 });
 
+//get last song added to certain queue
+app.get('/:queueId/lastSong', async (req: Request, res: Response) => {
+    const id = req.params.queueId;
+    const lastSong = await prisma.song.findMany({
+        where:{
+            queueId:id
+        },
+        orderBy:{
+            position: 'desc'
+        }
+    });
+    res.json(lastSong[0])
+})
+
 //login with spotify
 app.post("/login", async (req: Request, res: Response) => {
-      
+    console.log("Starting to save DJ in DATABASE")
     const code = req.body.code
     const spotifyApi = new SpotifyWebApi({
       redirectUri: process.env.REDIRECT_URI,
@@ -178,7 +199,7 @@ app.post("/login", async (req: Request, res: Response) => {
   
     spotifyApi
       .refreshAccessToken()
-      .then( async(data: { body: { access_token: string; }; }) => {
+      .then( async(data:{body: { access_token: string; refresh_token: string; expires_in: number; }; }) => {
         const user = await prisma.user.update({ 
             where:{
                 id:id
@@ -199,20 +220,45 @@ app.post("/login", async (req: Request, res: Response) => {
   })
 
   //guest login (anon)
-  app.post("/guest", async (req: Request, res: Response)=>{
+  app.post("/queue=:id", async (req: Request, res: Response)=>{
     res.setHeader("Access-Control-Allow-Origin","*") 
-    const guest = await prisma.user.create({
-        data:{ 
-            accessToken:null,
-            refreshToken:null,
-        }
-    })
-    res.json(guest)
+    console.log("Starting to save Guest in DATABASE")
+    const id = req.params.id;
+    const spotifyApi = new SpotifyWebApi({
+        redirectUri: process.env.REDIRECT_URI,
+        clientId: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
+      })
+
+      spotifyApi
+      .clientCredentialsGrant()
+      .then( async(data: {body: { access_token: string; refresh_token: string; expires_in: number; }; }) => {
+        const guest = await prisma.user.create({ 
+            data:{
+                accessToken: data.body.access_token,
+                refreshToken: data.body.refresh_token,
+            }
+        });
+        res.json({
+          accessToken: guest.accessToken,
+          queueId: id,
+        })
+      })
+      .catch((err: String) => {
+        console.log(err)
+        res.sendStatus(400)
+      })
   })
 
-
-
-
+  app.get("/queue=:id", async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const queue = await prisma.queue.findUnique({
+        where:{
+            id:id
+        }
+    })
+    res.json(queue)
+});
 app.listen(3001,() => {
     console.log('SERVER RUNNING ON PORT 3001')
 })

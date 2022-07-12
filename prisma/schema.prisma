@@ -23,16 +23,19 @@ model User {
 model Queue {
   id     String @id @default(cuid())
   user   User   @relation(fields: [userId], references: [id])
-  userId String
+  userId String @unique
   songs Song[]
 }
 
 model Song {
   id       String @id @default(cuid())
   uri      String
+  title String
+  artist String
+  albumUrl String
   queue Queue @relation(fields: [queueId], references: [id])
   queueId String
-  position Int    @default(autoincrement())
+  position Int 
   likes     Int
   dislikes  Int
 }
