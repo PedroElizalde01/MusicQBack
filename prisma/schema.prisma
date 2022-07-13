@@ -28,14 +28,15 @@ model Queue {
 }
 
 model Song {
-  id       String @id @default(cuid())
-  uri      String
-  title    String
-  artist   String
-  albumUrl String
-  queue    Queue @relation(fields: [queueId], references: [id])
-  queueId  String
-  position Int 
-  likes    Int
-  dislikes Int
+  id        String @id @default(cuid())
+  uri       String
+  title     String
+  artist    String
+  albumUrl  String
+  duration Int
+  queue     Queue @relation(fields: [queueId], references: [id])
+  queueId   String
+  position  Int 
+  likes     Int
+  dislikes  Int
 }

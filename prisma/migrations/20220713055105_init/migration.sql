@@ -23,6 +23,7 @@ CREATE TABLE "Song" (
     "title" TEXT NOT NULL,
     "artist" TEXT NOT NULL,
     "albumUrl" TEXT NOT NULL,
+    "duration" INTEGER NOT NULL,
     "queueId" TEXT NOT NULL,
     "position" INTEGER NOT NULL,
     "likes" INTEGER NOT NULL,

@@ -1,7 +1,6 @@
 import {Request, Response} from 'express';
 import {PrismaClient} from '@prisma/client'
 
-
 const express = require("express")
 const app = express()
 
@@ -71,8 +70,8 @@ app.get("/:queueId/songs", async (req: Request, res: Response) => {
     res.json(songs);
 });
 
-//get songs by queueId DESC
-/*
+//get first song from queue
+
 app.get("/:queueId/songs", async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
     const queueId = req.params.queueId;
@@ -84,8 +83,8 @@ app.get("/:queueId/songs", async (req: Request, res: Response) => {
             position:"desc",
         }
     });
-    res.json(songs);
-});*/
+    res.json(songs[0]);
+});
 
 //delete songs behind certain position
 app.delete("/:queueId", async(req: Request, res: Response) => {
@@ -95,13 +94,26 @@ app.delete("/:queueId", async(req: Request, res: Response) => {
         where:{
             queueId:queueId,
             position:{
-                lt: position,
+                lte: position,
             }
         }}
     );
     res.json(deletedSong);
 });
 
+//put song first on queue
+app.put("/:songId/putFirst", async (req: Request, res: Response) => {
+    const id = req.params.songId;
+    const song = await prisma.song.update({
+        where:{
+            id:id
+        },
+        data:{ 
+            position: 1
+        }
+    })
+    res.json(song);
+});
 
 //get songs by queueId orderBy Likes
 app.get("/:queueId/likedSongs", async (req: Request, res: Response) => {
@@ -119,18 +131,18 @@ app.get("/:queueId/likedSongs", async (req: Request, res: Response) => {
 });
 
 //get songs by id order by Dislikes
-app.get("//:queueId/dislikedSongs", async (req: Request, res: Response) => {
+app.get("/:queueId/dislikedSongs", async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
-    const id = req.params.id;
-    const song = await prisma.song.findMany({
+    const queueId = req.params.queueId;
+    const songs = await prisma.song.findMany({
         where:{
-            id:id
+            queueId:queueId
         },
         orderBy:{
             dislikes:"desc" 
         }
     });
-    res.json(song);
+    res.json(songs);
 });
 
 
@@ -231,13 +243,14 @@ app.delete("/deleteSong/:id", async(req: Request, res: Response) => {
 
 //add song
 app.post("/addSong", async (req: Request, res: Response) => {
-    const {uri, title, artist, albumUrl, queueId, position, likes, dislikes} = req.body;
+    const {uri, title, artist, albumUrl, duration, queueId, position, likes, dislikes} = req.body;
     const song = await prisma.song.create({
         data: {
             uri: uri,
             title: title,
             artist: artist,
             albumUrl: albumUrl,
+            duration: duration,
             queueId: queueId,
             position: position,
             likes: likes,
