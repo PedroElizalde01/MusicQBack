@@ -71,30 +71,28 @@ app.get("/:queueId/songs", async (req: Request, res: Response) => {
 });
 
 //get first song from queue
-
-app.get("/:queueId/songs", async (req: Request, res: Response) => {
-    res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
+app.get("/:queueId/firstSong", async (req: Request, res: Response) => {
     const queueId = req.params.queueId;
     const songs = await prisma.song.findMany({
         where:{
             queueId: queueId,
         },
         orderBy:{
-            position:"desc",
+            position:"asc",
         }
     });
     res.json(songs[0]);
 });
 
 //delete songs behind certain position
-app.delete("/:queueId", async(req: Request, res: Response) => {
+app.delete("/:queueId/deletePosition", async(req: Request, res: Response) => {
     const queueId = req.params.queueId;
-    const position = req.body.position;
+    const newPosition = req.body.position;
     const deletedSong = await prisma.song.deleteMany({
         where:{
             queueId:queueId,
             position:{
-                lte: position,
+                lte: newPosition,
             }
         }}
     );
@@ -104,12 +102,13 @@ app.delete("/:queueId", async(req: Request, res: Response) => {
 //put song first on queue
 app.put("/:songId/putFirst", async (req: Request, res: Response) => {
     const id = req.params.songId;
+    const {newPosition} = req.body.position
     const song = await prisma.song.update({
         where:{
             id:id
         },
         data:{ 
-            position: 1
+            position: newPosition
         }
     })
     res.json(song);
@@ -262,10 +261,10 @@ app.post("/addSong", async (req: Request, res: Response) => {
 
 //get last song added to certain queue
 app.get('/:queueId/lastSong', async (req: Request, res: Response) => {
-    const id = req.params.queueId;
+    const queueId = req.params.queueId;
     const lastSong = await prisma.song.findMany({
         where:{
-            queueId:id
+            queueId:queueId
         },
         orderBy:{
             position: 'desc'
