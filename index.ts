@@ -169,6 +169,33 @@ app.put("/:songId/moveUp", async (req: Request, res: Response) => {
     const id = req.params.songId;
     const actualPosition = req.body.position
     const queueId = req.body.queueId
+    const newPosition = actualPosition - 1;
+    const downSong = await prisma.song.updateMany({
+        where:{
+            position: newPosition,
+            queueId: queueId
+        },
+        data:{
+            position:actualPosition
+        },
+    })
+    const currentSong = await prisma.song.update({
+        where:{
+            id:id
+        },
+        data:{ 
+            position: newPosition
+        }
+    })
+    res.json([currentSong,downSong]);
+});
+
+
+//move track down
+app.put("/:songId/moveDown", async (req: Request, res: Response) => {
+    const id = req.params.songId;
+    const actualPosition = req.body.position
+    const queueId = req.body.queueId
     const newPosition = actualPosition + 1;
     const upSong = await prisma.song.updateMany({
         where:{
@@ -190,31 +217,6 @@ app.put("/:songId/moveUp", async (req: Request, res: Response) => {
     res.json([currentSong,upSong]);
 });
 
-//move track down
-app.put("/:songId/moveDown", async (req: Request, res: Response) => {
-    const id = req.params.songId;
-    const actualPosition = req.body.position
-    const queueId = req.body.queueId
-    const newPosition = actualPosition - 1;
-    const downSong = await prisma.song.updateMany({
-        where:{
-            queueId: queueId,
-            position: newPosition,
-        },
-        data:{
-            position:actualPosition
-        },
-    })
-    const currentSong = await prisma.song.update({
-        where:{
-            id:id
-        },
-        data:{ 
-            position: newPosition
-        }
-    })
-    res.json([currentSong,downSong]);
-});
 
 //delete song
 app.delete("/deleteSong/:id", async(req: Request, res: Response) => {
