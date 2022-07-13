@@ -56,29 +56,83 @@ app.get("/queueId/:id", async (req: Request, res: Response) => {
     res.json(queue);
 });
 
-//get songs by queueId
+//get songs by queueId ASC
 app.get("/:queueId/songs", async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
     const queueId = req.params.queueId;
     const songs = await prisma.song.findMany({
         where:{
             queueId: queueId,
+        },
+        orderBy:{
+            position:"asc",
         }
     });
     res.json(songs);
 });
 
-//get songs by id
-app.get("/songs/:id", async (req: Request, res: Response) => {
+//get songs by queueId DESC
+/*
+app.get("/:queueId/songs", async (req: Request, res: Response) => {
+    res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
+    const queueId = req.params.queueId;
+    const songs = await prisma.song.findMany({
+        where:{
+            queueId: queueId,
+        },
+        orderBy:{
+            position:"desc",
+        }
+    });
+    res.json(songs);
+});*/
+
+//delete songs behind certain position
+app.delete("/:queueId", async(req: Request, res: Response) => {
+    const queueId = req.params.queueId;
+    const position = req.body.position;
+    const deletedSong = await prisma.song.deleteMany({
+        where:{
+            queueId:queueId,
+            position:{
+                lt: position,
+            }
+        }}
+    );
+    res.json(deletedSong);
+});
+
+
+//get songs by queueId orderBy Likes
+app.get("/:queueId/likedSongs", async (req: Request, res: Response) => {
+    res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
+    const queueId = req.params.queueId;
+    const songs = await prisma.song.findMany({
+        where:{
+            queueId: queueId,
+        },
+        orderBy:{
+            likes:"desc",
+        }
+    });
+    res.json(songs);
+});
+
+//get songs by id order by Dislikes
+app.get("//:queueId/dislikedSongs", async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Allow-Origin","http://localhost:3000")
     const id = req.params.id;
     const song = await prisma.song.findMany({
         where:{
             id:id
+        },
+        orderBy:{
+            dislikes:"desc" 
         }
     });
     res.json(song);
 });
+
 
 //like song
 app.put("/:songId/like", async (req: Request, res: Response) => {
@@ -108,6 +162,58 @@ app.put("/:songId/dislike", async (req: Request, res: Response) => {
         }
     })
     res.json(dislikedSong);
+});
+
+//move track up
+app.put("/:songId/moveUp", async (req: Request, res: Response) => {
+    const id = req.params.songId;
+    const actualPosition = req.body.position
+    const queueId = req.body.queueId
+    const newPosition = actualPosition + 1;
+    const upSong = await prisma.song.updateMany({
+        where:{
+            queueId: queueId,
+            position: newPosition,
+        },
+        data:{
+            position:actualPosition
+        },
+    })
+    const currentSong = await prisma.song.update({
+        where:{
+            id:id
+        },
+        data:{ 
+            position: newPosition
+        }
+    })
+    res.json([currentSong,upSong]);
+});
+
+//move track down
+app.put("/:songId/moveDown", async (req: Request, res: Response) => {
+    const id = req.params.songId;
+    const actualPosition = req.body.position
+    const queueId = req.body.queueId
+    const newPosition = actualPosition - 1;
+    const downSong = await prisma.song.updateMany({
+        where:{
+            queueId: queueId,
+            position: newPosition,
+        },
+        data:{
+            position:actualPosition
+        },
+    })
+    const currentSong = await prisma.song.update({
+        where:{
+            id:id
+        },
+        data:{ 
+            position: newPosition
+        }
+    })
+    res.json([currentSong,downSong]);
 });
 
 //delete song
